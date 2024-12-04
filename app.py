@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 import sqlite3
+import re
+from markupsafe import escape
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///students.db'
@@ -76,6 +78,20 @@ def edit_student(id):
         age = request.form['age']
         grade = request.form['grade']
         
+        # Validasi input
+        if not name or not isinstance(name, str) or len(name) > 100 or not re.match(r'^[A-Za-z\s]+$', name):    
+            return "Invalid name", 400
+        
+        if not age.isdigit() or int(age) < 1 or int(age) > 120:
+            return "Invalid age", 400
+        
+        if not re.match(r'^[A-F][+-]?$|^[A]$', grade): 
+            return "Invalid grade", 400
+
+        # Escape input untuk HTML
+        name = escape(name)
+        grade = escape(grade)
+
         # RAW Query
         # kode sebelumnya (masih menggunakan interpolasi string)
         # db.session.execute(text(f"UPDATE student SET name='{name}', age={age}, grade='{grade}' WHERE id={id}"))
